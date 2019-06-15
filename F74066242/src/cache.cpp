@@ -65,24 +65,77 @@ int main(int argc, char **argv){
 	int csize,bsize,asso,replace,temp,block,taglth,indexlth,tag,index;
 	int offset=4;//4 word = 16 bytes = 2^4  -> offset=4
 	string hexread,stag,sindex;
+	bool replacebool=0,full=0;
 	fin>>csize;
 	fin>>bsize;
 	fin>>asso;
 	fin>>replace;
 	block = csize*1024/bsize;
-	struct cache ini;
-	ini.valid = 0;
-	ini.
+	caches ini;
+	ini.valid = 0;	ini.tag = 0;	ini.block = 0;
 	for(int i=0;i<block;i++){
-		cache.push_back
-
+		cache.push_back(ini);
 	}
-	indexlth = log(block)/log(2);
-	taglth = 32 - indexlth - offset;
+//	indexlth = log(block)/log(2);
+//	taglth = 32 - indexlth - offset;
 	//
 	while(fin>>hexread){
+		replacebool=0;
 		hexread = hexread.substr(2);	
 		hexread = hextobin(hexread);
+		if(asso==0){ //direct map
+			indexlth = log(block)/log(2);
+			taglth = 32 - indexlth - offset;
+			stag = hexread.substr(0,taglth);
+			tag = bintodec(stag);
+			sindex = hexread.substr(taglth,indexlth);
+			index = bintodec(sindex);
+//			cout<<index<<endl;
+//			if(!cache[index].valid){//valid==0 -> cache is miss -> replace
+//				replacebool=1;
+//			}
+//			if(replacebool){
+			if(cache[index].valid){ //valid=1 -> replace
+				if(cache[index].tag != tag){
+					cout<<cache[index].tag<<endl;
+				}
+				else{
+					cout<<"-1"<<endl;
+				}
+				cache[index].tag = tag;
+			}
+			else{ //valid=0 -> add
+				cache[index].valid = 1;
+				cout<<"-1"<<endl;
+				cache[index].tag = tag;
+			}
+//			cache[index].tag = tag;
+//			}//replacebool
+		}//direct map
+
+		else if(asso==1){//four way
+			if(replace==0){//FIFO
+
+            }//FIFO
+	        else if(replace==1){//LRU
+	
+			}//LRU
+            else if(replace==2){//my policy
+	
+			}
+		}//four way
+
+		else if(asso==2){//full asso
+			if(replace==0){//FIFO
+
+        	}//FIFO
+	        else if(replace==1){//LRU
+
+			}//LRU
+       		else if(replace==2){//my policy
+
+			}
+		}//full asso
 		stag = hexread.substr(0,taglth);
 		tag = bintodec(stag);
 		sindex = hexread.substr(taglth,indexlth);
