@@ -66,18 +66,7 @@ int main(int argc, char **argv){
 	int quo,mod;
 	string hexread,stag,sindex,soffset;
 	bool replacebool=0,full=0,have=0;
-	cout<<"vec"<<endl;
-	//vector<vector<int> > cache4set(block/4);
-	/*for(int i=0;i<block/4;i++){
-		cache4set[i].resize(4);
-		cout<<"all0"<<endl;
-	}*/
-	int **cache4set;
-	cache4set = new int*[block/4];
-	for(int i=0;i<block/4;i++){
-		cache4set[i] = new int[4];
-	}
-	cout<<"pass"<<endl;
+	
 	//vector<int> cache4set(block/4]);
 	//vector<int> cache4order(block/4,0);
 	fin>>csize;
@@ -89,6 +78,13 @@ int main(int argc, char **argv){
 	vector<caches> cache4(block/4);
 	caches ini;
 	ini.valid = 0;	ini.tag = 0;	ini.block = 0;
+	cout<<"vec"<<endl;
+	int **cache4set;
+	cache4set = new int*[block/4];
+	for(int i=0;i<block/4;i++){
+		cache4set[i] = new int[4];
+	}
+	cout<<"pass"<<endl;
 	//for(int i=0;i<block;i++){
 	//	cache.push_back(ini);
 	//}
@@ -126,15 +122,17 @@ int main(int argc, char **argv){
 		else if(asso==1){//four way
 			indexlth = log((block/4))/log(2);
 			offsetlth = log(bsize)/log(2);
+			if(bsize==1) offsetlth = 0;
 			taglth = 32 - indexlth - offsetlth;
 			soffset = hexread.substr(indexlth,32);
 			offset = bintodec(soffset);
 			stag = hexread.substr(0,taglth);
 			tag = bintodec(stag);
+			//cout<<"cons:"<<soffset<<endl;
 			sindex = hexread.substr(taglth,indexlth);
 			index = bintodec(sindex);
 			//index = index % (int)(pow(2,indexlth));
-			//cout<<"in 4"<<endl;
+			//cout<<sindex<<endl;
 			quo = index/4;
 			mod = index%4;
 			if(replace==0){//FIFO
@@ -177,15 +175,19 @@ int main(int argc, char **argv){
 	
 			}//LRU
             else if(replace==2){//my policy
+		//	cout<<"in12 "<<tag<<endl;
 				have = 0;
 				fullcount = 0;
+				//cout<<cache4set[0][0]<<" "<<tag<<endl;
 				for(int i = 0;i < 4;i++){
+				//	cout<<cache4set[index][i]<<" "<<tag<<endl;
 					if(cache4set[index][i] == tag){
 						have = 1;
 						fout<<"-1"<<endl;
 						break;						
 					}					
 				}
+				//cout<<tag<<" "<<have<<endl;
 				if(!have){
 					for(int i = 0;i < 4;i++){
 						if(cache4set[index][i] != 0){
@@ -200,7 +202,8 @@ int main(int argc, char **argv){
 								break;
 							}
 						}
-					}
+						//cout<<"=4fin"<<endl;
+					}		
 					else{//4 way is full
 						fout<<cache4set[index][0]<<endl;
 						for(int i = 0;i < 3;i++){
@@ -208,6 +211,7 @@ int main(int argc, char **argv){
 						}
 						cache4set[index][3] = tag;
 					}
+					//cout<<"=4full"<<endl;
 				}
 			}
 		}//four way
