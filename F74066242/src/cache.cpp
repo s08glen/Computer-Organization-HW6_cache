@@ -12,7 +12,6 @@ struct caches{
 	int block;
 };
 
-vector<caches> cache;
 
 int bintodec(string sbin){
 	int iReturn = 0,count = 0;
@@ -62,20 +61,37 @@ int main(int argc, char **argv){
 		cout << "Can not open file!\n";
 		return 0;
 	}
-	int csize,bsize,asso,replace,temp,block,taglth,indexlth,tag,index;
-	int offset=4;//4 word = 16 bytes = 2^4  -> offset=4
-	string hexread,stag,sindex;
-	bool replacebool=0,full=0;
+	int csize,bsize,asso,replace,temp,block,taglth,indexlth,tag,index,fullcount=0;
+	int offset=4,offsetlth;//4 word = 16 bytes = 2^4  -> offset=4
+	int quo,mod;
+	string hexread,stag,sindex,soffset;
+	bool replacebool=0,full=0,have=0;
+	cout<<"vec"<<endl;
+	//vector<vector<int> > cache4set(block/4);
+	/*for(int i=0;i<block/4;i++){
+		cache4set[i].resize(4);
+		cout<<"all0"<<endl;
+	}*/
+	int **cache4set;
+	cache4set = new int*[block/4];
+	for(int i=0;i<block/4;i++){
+		cache4set[i] = new int[4];
+	}
+	cout<<"pass"<<endl;
+	//vector<int> cache4set(block/4]);
+	//vector<int> cache4order(block/4,0);
 	fin>>csize;
 	fin>>bsize;
 	fin>>asso;
 	fin>>replace;
 	block = csize*1024/bsize;
+	vector<caches> cache(block);
+	vector<caches> cache4(block/4);
 	caches ini;
 	ini.valid = 0;	ini.tag = 0;	ini.block = 0;
-	for(int i=0;i<block;i++){
-		cache.push_back(ini);
-	}
+	//for(int i=0;i<block;i++){
+	//	cache.push_back(ini);
+	//}
 //	indexlth = log(block)/log(2);
 //	taglth = 32 - indexlth - offset;
 	//
@@ -85,62 +101,246 @@ int main(int argc, char **argv){
 		hexread = hextobin(hexread);
 		if(asso==0){ //direct map
 			indexlth = log(block)/log(2);
+			offset = log(bsize)/log(2);
 			taglth = 32 - indexlth - offset;
 			stag = hexread.substr(0,taglth);
 			tag = bintodec(stag);
 			sindex = hexread.substr(taglth,indexlth);
 			index = bintodec(sindex);
-//			cout<<index<<endl;
-//			if(!cache[index].valid){//valid==0 -> cache is miss -> replace
-//				replacebool=1;
-//			}
-//			if(replacebool){
 			if(cache[index].valid){ //valid=1 -> replace
 				if(cache[index].tag != tag){
-					cout<<cache[index].tag<<endl;
+					fout<<cache[index].tag<<endl;
 				}
 				else{
-					cout<<"-1"<<endl;
+					fout<<"-1"<<endl;
 				}
 				cache[index].tag = tag;
 			}
 			else{ //valid=0 -> add
 				cache[index].valid = 1;
-				cout<<"-1"<<endl;
+				fout<<"-1"<<endl;
 				cache[index].tag = tag;
 			}
-//			cache[index].tag = tag;
-//			}//replacebool
 		}//direct map
 
 		else if(asso==1){//four way
+			indexlth = log((block/4))/log(2);
+			offsetlth = log(bsize)/log(2);
+			taglth = 32 - indexlth - offsetlth;
+			soffset = hexread.substr(indexlth,32);
+			offset = bintodec(soffset);
+			stag = hexread.substr(0,taglth);
+			tag = bintodec(stag);
+			sindex = hexread.substr(taglth,indexlth);
+			index = bintodec(sindex);
+			//index = index % (int)(pow(2,indexlth));
+			//cout<<"in 4"<<endl;
+			quo = index/4;
+			mod = index%4;
 			if(replace==0){//FIFO
-
+				have = 0;
+				fullcount = 0;
+				for(int i = 0;i < 4;i++){
+					if(cache4set[index][i] == tag){
+						have = 1;
+						fout<<"-1"<<endl;
+						break;						
+					}					
+				}
+				if(!have){
+					for(int i = 0;i < 4;i++){
+						if(cache4set[index][i] != 0){
+							fullcount += 1;
+						}
+					}
+					cout<<cache4set[index][0]<<endl;
+					if(fullcount != 4){//4 way have empty
+						for(int i = 0;i < 4;i++){
+							if(cache4set[index][i] == 0){
+								cache4set[index][i] = tag;
+								//cout<<cache4set[index][i]<<endl;
+								fout<<"-1"<<endl;
+								break;
+							}
+						}
+					}
+					else{//4 way is full
+						fout<<cache4set[index][0]<<endl;
+						for(int i = 0;i < 3;i++){
+							cache4set[index][i] = cache4set[index][i+1];
+						}
+						cache4set[index][3] = tag;
+					}
+				}
             }//FIFO
 	        else if(replace==1){//LRU
 	
 			}//LRU
             else if(replace==2){//my policy
-	
+				have = 0;
+				fullcount = 0;
+				for(int i = 0;i < 4;i++){
+					if(cache4set[index][i] == tag){
+						have = 1;
+						fout<<"-1"<<endl;
+						break;						
+					}					
+				}
+				if(!have){
+					for(int i = 0;i < 4;i++){
+						if(cache4set[index][i] != 0){
+							fullcount += 1;
+						}
+					}
+					if(fullcount != 4){//4 way have empty
+						for(int i = 0;i < 4;i++){
+							if(cache4set[index][i] == 0){
+								cache4set[index][i] = tag;
+								fout<<"-1"<<endl;
+								break;
+							}
+						}
+					}
+					else{//4 way is full
+						fout<<cache4set[index][0]<<endl;
+						for(int i = 0;i < 3;i++){
+							cache4set[index][i] = cache4set[index][i+1];
+						}
+						cache4set[index][3] = tag;
+					}
+				}
 			}
 		}//four way
 
 		else if(asso==2){//full asso
+			index = log(block)/log(2);
+			offset = log(bsize)/log(2);
+			taglth = 32  - offset;
+			stag = hexread.substr(0,taglth);
+			tag = bintodec(stag);
 			if(replace==0){//FIFO
-
-        	}//FIFO
-	        else if(replace==1){//LRU
+				have = 0;
+				for(int i = 0;i < block;i++){
+					if(cache[i].tag == tag){
+						have = 1;
+						fout<<"-1"<<endl;
+						break;
+					}					
+				}
+				if(!have && fullcount < block){ //cache isn't full -> miss
+					caches tempv;
+					tempv.tag = tag;
+					tempv.block = index;
+					tempv.valid = 1;
+					cache.erase(cache.end()-1);
+					cache.insert(cache.begin(),tempv);
+					fullcount += 1;
+					fout<<"-1"<<endl;
+					
+					//cout<<"FULLCOUNT"<<fullcount<<endl;
+				}
+				else if(!have && fullcount >= block){//FIFO Policy
+					//cout<<cache[cache.size()].tag<<endl;
+					fout<<cache[block-1].tag<<endl;
+					cache.pop_back();
+					caches tempv;
+					tempv.tag = tag;
+					tempv.block = index;
+					cache.insert(cache.begin(),tempv);//first use put at the left
+				}		
+		
+			}//FIFO
+	    	else if(replace==1){//LRU
+				have = 0;
+				for(int i = 0;i < block;i++){
+					if(cache[i].tag == tag){
+						caches tempv;
+						tempv.tag = tag;
+						tempv.block = index;
+						cache.erase(cache.begin()+i);//store in temp and put to left
+						cache.insert(cache.begin(),tempv);//recent use put at the left
+						//cout<<cache[0].tag<<" "<<tempv.tag<<endl;
+						have = 1;
+						fout<<"-1"<<endl;
+						//cout<<cache[cache.size()].tag<<endl;
+						break;
+					}
+					
+				}
+				
+				if(!have && fullcount < block){ //cache isn't full -> miss
+					caches tempv;
+					tempv.tag = tag;
+					tempv.block = index;
+					tempv.valid = 1;
+					cache.erase(cache.end()-1);
+					//cout<<"1:"<<cache.size()<<endl;
+					cache.insert(cache.begin(),tempv);
+					fullcount += 1;
+					fout<<"-1"<<endl;
+					
+					//cout<<"FULLCOUNT"<<fullcount<<endl;
+				}
+				else if(!have && fullcount >= block){//LRU Policy
+					//cout<<cache[cache.size()].tag<<endl;
+					fout<<cache[block-1].tag<<endl;
+					cache.pop_back();
+					caches tempv;
+						tempv.tag = tag;
+						tempv.block = index;
+					//ini.tag = tag;
+					//ini.block = index;
+					cache.insert(cache.begin(),tempv);//recent use put at the left
+				}	
 
 			}//LRU
-       		else if(replace==2){//my policy
+    	   	else if(replace==2){//my policy
+			   have = 0;
+				for(int i = 0;i < block;i++){
+					if(cache[i].tag == tag){
+						have = 1;
+						fout<<"-1"<<endl;
+						break;
+					}					
+				}
+				if(!have && fullcount < block){ //cache isn't full -> miss
+					caches tempv;
+					tempv.tag = tag;
+					tempv.block = index;
+					tempv.valid = 1;
+					cache.erase(cache.end()-1);
+					cache.insert(cache.begin(),tempv);
+					fullcount += 1;
+					fout<<"-1"<<endl;
+					
+					//cout<<"FULLCOUNT"<<fullcount<<endl;
+				}
+				else if(!have && fullcount >= block){//my Policy
+					//cout<<cache[cache.size()].tag<<endl;
+					
 
+
+
+
+
+
+
+					caches tempv;
+					tempv.tag = tag;
+					tempv.block = index;
+					cache.insert(cache.begin(),tempv);//first use put at the left
+				}	
 			}
+			
 		}//full asso
 		stag = hexread.substr(0,taglth);
 		tag = bintodec(stag);
 		sindex = hexread.substr(taglth,indexlth);
 		index = bintodec(sindex);
 	}
+	//for(int i=0;i<fullcount;i++){
+	//	cout<<cache[i].tag<<endl;
+	//}
 //	cout<<hex<<temp<<endl;
 	return 0;
 }
