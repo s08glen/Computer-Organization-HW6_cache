@@ -76,17 +76,18 @@ int main(int argc, char **argv){
 	vector<caches> cache4(block/4);
 	caches ini;
 	ini.valid = 0;	ini.tag = 0;	ini.block = 0;
-	cout<<"vec"<<endl;
+	//cout<<"vec"<<endl;
 	int **cache4set;
-	cache4set = new int*[block/4];
+	cache4set = new int*[block/4+2];
 	for(int i=0;i<block/4;i++){
-		cache4set[i] = new int[4];
+		cache4set[i] = new int[5];
 	}
-	cout<<"pass"<<endl;
+	//cout<<"pass"<<endl;
 	
 	while(fin>>hexread){
 		replacebool=0;
-		hexread = hexread.substr(2);	
+		//cout<<hexread<<endl;
+		hexread = hexread.substr(2);			
 		hexread = hextobin(hexread);
 		if(asso==0){ //direct map
 			indexlth = log(block)/log(2);
@@ -201,16 +202,9 @@ int main(int argc, char **argv){
             else if(replace==2){//my policy
 				have = 0;
 				fullcount = 0;
-				for(int i = 0;i < 4;i++){					
+				for(int i = 0;i < 4;i++){
 					if(cache4set[index][i] == tag){
 						have = 1;
-						for(int j=i;j<3;j++){
-							cout<<tag<<" "<<cache4set[index][i]<<" "<<cache4set[index][i+1]<<" j= "<<j<<endl;
-							cache4set[index][i] = cache4set[index][i+1];
-							cout<<cache4set[index][i]<<" "<<cache4set[index][i+1]<<" done "<<endl;
-						}
-						cache4set[index][3] = tag; //LRU -> move to rightest
-						cout<<"tagdone"<<endl;
 						fout<<"-1"<<endl;
 						break;						
 					}					
@@ -231,11 +225,11 @@ int main(int argc, char **argv){
 						}
 					}		
 					else{//4 way is full
-						fout<<cache4set[index][0]<<endl;
-						for(int i = 0;i < 3;i++){
-							cache4set[index][i] = cache4set[index][i+1];
-						}
-						cache4set[index][3] = tag;//LRU -> delete the most left one
+						fout<<cache4set[index][3]<<endl;
+						//for(int i = 0;i < 3;i++){
+							//cache4set[index][i] = cache4set[index][i+1];
+						//}
+						cache4set[index][3] = tag;
 					}
 				}
 			}
@@ -343,10 +337,6 @@ int main(int argc, char **argv){
 			}
 			
 		}//full asso
-		stag = hexread.substr(0,taglth);
-		tag = bintodec(stag);
-		sindex = hexread.substr(taglth,indexlth);
-		index = bintodec(sindex);
-	}
+	}//while
 	return 0;
 }
